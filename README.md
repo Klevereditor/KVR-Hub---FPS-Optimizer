@@ -1,45 +1,50 @@
---KVR Hub - FPS Optimizer
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
-local RunService = game:GetService("RunService")
-local Lighting = game:GetService("Lighting")
-
--- Configurações de iluminação para performance
-Lighting.Brightness = 0
-Lighting.OutdoorAmbient = Color3.new(0, 0, 0)
-Lighting.Ambient = Color3.new(0, 0, 0)
-Lighting.GlobalShadows = false
-Lighting.FogEnd = 100000
-Lighting.FogStart = 0
-Lighting.ColorShift_Top = Color3.new(0, 0, 0)
-Lighting.ColorShift_Bottom = Color3.new(0, 0, 0)
-
--- Função para otimizar partes
-local function optimizePart(part)
-    if part:IsA("BasePart") then
-        part.CastShadow = false
-        part.Material = Enum.Material.Plastic -- Material mais leve
-        part.Reflectance = 0
-        part.Transparency = 0
-        -- Tenta simplificar a geometria se for um MeshPart
-        if part:IsA("MeshPart") then
-            part.RenderFidelity = Enum.RenderFidelity.Performance
+local function removeHeavyAssets()
+    for _, asset in pairs(Workspace:GetChildren()) do
+        if asset:IsA("Part") or asset:IsA("MeshPart") then
+            asset.Material = Enum.Material.Plastic
+            asset.BrickColor = BrickColor.new("Medium stone grey")
+            asset.TextureID = "" -- Remove textures
+        elseif asset:IsA("Model") then
+            for _, part in pairs(asset:GetChildren()) do
+                if part:IsA("Part") or part:IsA("MeshPart") then
+                    part.Material = Enum.Material.Plastic
+                    part.BrickColor = BrickColor.new("Medium stone grey")
+                    part.TextureID = "" -- Remove textures
+                end
+            end
         end
     end
 end
 
--- Percorre todos os objetos existentes e otimiza
-for _, obj in ipairs(game:GetDescendants()) do
-    optimizePart(obj)
+local function onChildAdded(child)
+    if child:IsA("Part") or child:IsA("MeshPart") then
+        child.Material = Enum.Material.Plastic
+        child.BrickColor = BrickColor.new("Medium stone grey")
+        child.TextureID = "" -- Remove textures
+    elseif child:IsA("Model") then
+        for _, part in pairs(child:GetChildren()) do
+            if part:IsA("Part") or part:IsA("MeshPart") then
+                part.Material = Enum.Material.Plastic
+                part.BrickColor = BrickColor.new("Medium stone grey")
+                part.TextureID = "" -- Remove textures
+            end
+        end
+    end
 end
 
--- Conecta a função a novos objetos adicionados ao jogo
-game.DescendantAdded:Connect(optimizePart)
+local function onPlayerAdded(player)
+    player.CharacterAdded:Connect(function(character)
+        character:WaitForChild("Humanoid").Changed:Connect(function()
+            removeHeavyAssets()
+        end)
+    end)
+end
 
--- Otimização de texturas (exemplo: reduzir a qualidade)
--- Isso é mais complexo e geralmente requer manipulação de AssetIds ou substituição de texturas.
--- Para um script simples sem GUI, a melhor abordagem é usar materiais leves.
--- Se houver texturas personalizadas, elas precisariam ser substituídas por versões de baixa resolução.
--- Isso não é trivial de fazer automaticamente sem uma lista de AssetIds ou um sistema de substituição.
+Players.PlayerAdded:Connect(onPlayerAdded)
+Workspace.ChildAdded:Connect(onChildAdded)
 
-print("Script de otimização de performance ativado!")
-print("Som e texturas (com materiais leves) foram mantidos.")
+removeHeavyAssets()
